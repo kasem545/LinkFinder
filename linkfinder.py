@@ -82,38 +82,38 @@ def parser_input(input):
     '''
     Parse Input
     '''
+    if os.path.exists(input) and os.path.isfile(input):
+        try:
+            with open(input, "r", encoding="utf-8") as f:
+                lines = f.read().splitlines()
+            return [line for line in lines if line.strip()] 
+        except Exception as e:
+            parser_error(f"Error reading file: {e}")
 
-    # Method 1 - URL
     if input.startswith(('http://', 'https://',
                          'file://', 'ftp://', 'ftps://')):
         return [input]
 
-    # Method 2 - URL Inspector Firefox
     if input.startswith('view-source:'):
         return [input[12:]]
 
-    # Method 3 - Burp file
     if args.burp:
         jsfiles = []
         items = xml.etree.ElementTree.fromstring(open(args.input, "r").read())
-
         for item in items:
-            jsfiles.append({"js":base64.b64decode(item.find('response').text).decode('utf-8',"replace"), "url":item.find('url').text})
+            jsfiles.append({"js": base64.b64decode(item.find('response').text).decode('utf-8', "replace"),
+                            "url": item.find('url').text})
         return jsfiles
 
-    # Method 4 - Folder with a wildcard
     if "*" in input:
         paths = glob.glob(os.path.abspath(input))
         file_paths = [p for p in paths if os.path.isfile(p)]
         for index, path in enumerate(file_paths):
             file_paths[index] = "file://%s" % path
-        return (file_paths if len(file_paths) > 0 else parser_error('Input with wildcard does \
-        not match any files.'))
+        return (file_paths if len(file_paths) > 0 else parser_error('Input with wildcard does not match any files.'))
 
-    # Method 5 - Local file
     path = "file://%s" % os.path.abspath(input)
-    return [path if os.path.exists(input) else parser_error("file could not \
-be found (maybe you forgot to add http/https).")]
+    return [path if os.path.exists(input) else parser_error("File could not be found (maybe you forgot to add http/https).")]
 
 
 def send_request(url):
